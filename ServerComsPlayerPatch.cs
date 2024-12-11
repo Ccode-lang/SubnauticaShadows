@@ -17,6 +17,14 @@ namespace SubnauticaShadows
         {
             if (ServerComVars.initDone) return;
             ServerComVars.client = new UdpClient();
+
+            // Fixes problems with non local server access
+            ServerComVars.client.Client.IOControl(
+                (IOControlCode)ServerComVars.SIO_UDP_CONNRESET,
+                new byte[] { 0, 0, 0, 0 },
+                null
+            );
+
             ServerComVars.client.Connect(Plugin.ServerAddress.Value, 4504);
             ServerComVars.thread = new Thread(new ThreadStart(ServerComVars.ComsThread));
             ServerComVars.thread.Start();

@@ -33,6 +33,11 @@ namespace SubnauticaShadows
 
         public static int id = -1;
 
+
+
+
+        public static int SIO_UDP_CONNRESET = -1744830452;
+
         public static QueuedShadow PopQueue()
         {
             if (queue.Count == 0)
