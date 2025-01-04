@@ -16,27 +16,37 @@ namespace SubnauticaShadows
         public static void Patch(Player __instance)
         {
             if (ServerComVars.initDone) return;
-            ServerComVars.client = new UdpClient();
+            ServerComVars.client_udp = new UdpClient();
+            ServerComVars.client_tcp = new TcpClient();
 
             // Fixes problems with non local server access
-            ServerComVars.client.Client.IOControl(
+            ServerComVars.client_udp.Client.IOControl(
                 (IOControlCode)ServerComVars.SIO_UDP_CONNRESET,
                 new byte[] { 0, 0, 0, 0 },
                 null
             );
 
-            ServerComVars.client.Connect(Plugin.ServerAddress.Value, 4504);
-            ServerComVars.thread = new Thread(new ThreadStart(ServerComVars.ComsThread));
-            ServerComVars.thread.Start();
-            ServerComVars.initDone = true;
+            ServerComVars.client_udp.Connect(Plugin.ServerAddress.Value, 4504);
+            ServerComVars.thread_udp = new Thread(new ThreadStart(ServerComVars.ComsThread_udp));
+            ServerComVars.thread_udp.Start();
 
-            // ServerComVars.client.Send(Encoding.ASCII.GetBytes("E"), Encoding.ASCII.GetBytes("E").Length);
+            ServerComVars.client_tcp.Connect(Plugin.ServerAddress.Value, 4504);
+            ServerComVars.thread_tcp = new Thread(new ThreadStart(ServerComVars.ComsThread_tcp));
+            ServerComVars.thread_tcp.Start();
+        }
+
+        [HarmonyPatch(nameof(Player.OnDestroy))]
+        [HarmonyPostfix]
+        public static void DestroyPatch()
+        {
+            ServerComVars.Disconnect();
         }
 
         [HarmonyPatch(nameof(Player.Update))]
         [HarmonyPostfix]
         public static void UpdatePatch(Player __instance)
         {
+            while (!ServerComVars.initDone) return;
             if (Vector3.Distance(ServerComVars.LastPos, __instance.transform.position) > 0.2f) {
                 ServerComVars.LastPos = __instance.transform.position;
                 string ID = "";
@@ -51,16 +61,18 @@ namespace SubnauticaShadows
 
                 Byte[] message = Encoding.ASCII.GetBytes($"POSUPDT:{__instance.transform.position.x.ToString()}:{__instance.transform.position.y.ToString()}:{__instance.transform.position.z.ToString()}:{ID}");
                 //Plugin.Logger.LogInfo(Encoding.ASCII.GetString(message));
-                ServerComVars.client.Send(message, message.Length);
+                ServerComVars.client_udp.Send(message, message.Length);
             }
+
+            ErrorMessage.AddDebug(ServerComVars.PopChat());
 
             ServerComVars.posReqTimer -= Time.deltaTime;
 
             if (ServerComVars.posReqTimer <= 0)
             {
                 ServerComVars.posReqTimer = 0.2f;
-                Plugin.Logger.LogInfo("Requesting positions");
-                ServerComVars.client.Send(Encoding.ASCII.GetBytes("POSREQ"), Encoding.ASCII.GetBytes("POSREQ").Length);
+                //Plugin.Logger.LogInfo("Requesting positions");
+                ServerComVars.client_udp.Send(Encoding.ASCII.GetBytes("POSREQ"), Encoding.ASCII.GetBytes("POSREQ").Length);
             }
 
             foreach (string id in ServerComVars.ShadowPositions.Keys)
@@ -76,12 +88,14 @@ namespace SubnauticaShadows
                 }
             }
 
+            ServerComVars.PopAndDeleteShadows();
+
             QueuedShadow shadowq = ServerComVars.PopQueue();
 
 
             if (shadowq != null)
             {
-                //Plugin.Logger.LogInfo("test");
+                Plugin.Logger.LogInfo("test");
                 ServerComVars.shadowids.Add(shadowq.id);
                 GameObject shadow = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 shadow.AddComponent<Shadow>();
