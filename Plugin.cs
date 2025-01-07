@@ -3,6 +3,8 @@ using BepInEx;
 using BepInEx.Logging;
 using BepInEx.Configuration;
 using HarmonyLib;
+using UnityEngine;
+using System.IO;
 
 
 namespace SubnauticaShadows
@@ -16,10 +18,21 @@ namespace SubnauticaShadows
 
         public static ConfigEntry<string> ServerAddress;
 
+        public static AssetBundle Assets = null;
+
+        public static GameObject PlayerPrefab = null;
+
         private void Awake()
         {
             // set project-scoped logger instance
             Logger = base.Logger;
+
+            string currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            Assets = AssetBundle.LoadFromFile(Path.Combine(currentPath, "shadowplayer"));
+
+            PlayerPrefab = Assets.LoadAsset<GameObject>("Player.prefab");
+
+            Assets.Unload(false);
 
             ServerAddress = Config.Bind("General", "ServerAddress", "127.0.0.1", "The address of the server you want to connect to.");
 

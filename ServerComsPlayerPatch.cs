@@ -97,9 +97,8 @@ namespace SubnauticaShadows
             {
                 Plugin.Logger.LogInfo("test");
                 ServerComVars.shadowids.Add(shadowq.id);
-                GameObject shadow = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                GameObject shadow = GameObject.Instantiate(Plugin.PlayerPrefab);
                 shadow.AddComponent<Shadow>();
-                shadow.GetComponent<Collider>().enabled = false;
                 shadow.transform.position = shadowq.Pos;
                 shadow.name = $"Shadow{shadowq.id}";
                 Shadow sh = shadow.GetComponent<Shadow>();
