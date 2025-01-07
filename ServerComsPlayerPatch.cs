@@ -83,7 +83,7 @@ namespace SubnauticaShadows
                     {
                         //Plugin.Logger.LogInfo(shadow.id);
                         //Plugin.Logger.LogInfo(id);
-                        shadow.transform.position = ServerComVars.ShadowPositions[id];
+                        shadow.targetPosition = ServerComVars.ShadowPositions[id];
                     }
                 }
             }
