@@ -49,13 +49,17 @@ namespace SubnauticaShadows
         public static float posReqTimer = 0.2f;
 
         // Thread safe disctionary for shadow position updates in unity
-        public static ConcurrentDictionary<string, Vector3> ShadowPositions = new ConcurrentDictionary<string, Vector3>();
+        public static ConcurrentDictionary<string, (Vector3, Quaternion)> ShadowPositions = new ConcurrentDictionary<string, (Vector3, Quaternion)>();
 
         public static int id = -1;
 
         // Chat print queue
         private static List<string> chatprintqueue = new();
 
+
+
+        public static Vector3 LastRotEulers = Vector3.zero;
+        public static MainCameraControl cameraRot;
 
 
 
@@ -151,6 +155,7 @@ namespace SubnauticaShadows
                             string[] clientpos = splitmessage[counter].SplitByChar(':');
 
                             Vector3 pos = new Vector3(float.Parse(clientpos[1]), float.Parse(clientpos[2]), float.Parse(clientpos[3]));
+                            Quaternion rot = Quaternion.Euler(float.Parse(clientpos[4]), float.Parse(clientpos[5]), float.Parse(clientpos[6]));
 
                             if (!shadowids.Contains(clientpos[0]))
                             {
@@ -171,7 +176,7 @@ namespace SubnauticaShadows
                                 if (shadow.id == clientpos[0])
                                 {
                                     //Plugin.Logger.LogInfo(shadow.id);
-                                    ShadowPositions[shadow.id] = pos;
+                                    ShadowPositions[shadow.id] = (pos, rot);
                                 }
                             }
 

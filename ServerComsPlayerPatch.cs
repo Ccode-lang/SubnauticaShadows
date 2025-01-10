@@ -26,6 +26,8 @@ namespace SubnauticaShadows
                 null
             );
 
+            ServerComVars.cameraRot = UnityEngine.Object.FindObjectOfType<MainCameraControl>();
+
             ServerComVars.client_udp.Connect(Plugin.ServerAddress.Value, 4504);
             ServerComVars.thread_udp = new Thread(new ThreadStart(ServerComVars.ComsThread_udp));
             ServerComVars.thread_udp.Start();
@@ -47,7 +49,7 @@ namespace SubnauticaShadows
         public static void UpdatePatch(Player __instance)
         {
             while (!ServerComVars.initDone) return;
-            if (Vector3.Distance(ServerComVars.LastPos, __instance.transform.position) > 0.2f) {
+            if (Vector3.Distance(ServerComVars.LastPos, __instance.transform.position) > 0.2f || Vector3.Distance(ServerComVars.LastRotEulers, ServerComVars.cameraRot.transform.rotation.eulerAngles) > 0) {
                 ServerComVars.LastPos = __instance.transform.position;
                 string ID = "";
 
@@ -59,10 +61,12 @@ namespace SubnauticaShadows
                     ID = ServerComVars.id.ToString();
                 }
 
-                Byte[] message = Encoding.ASCII.GetBytes($"POSUPDT:{__instance.transform.position.x.ToString()}:{__instance.transform.position.y.ToString()}:{__instance.transform.position.z.ToString()}:{ID}");
+                Byte[] message = Encoding.ASCII.GetBytes($"POSUPDT:{__instance.transform.position.x.ToString()}:{__instance.transform.position.y.ToString()}:{__instance.transform.position.z.ToString()}:{ServerComVars.cameraRot.transform.rotation.eulerAngles.x.ToString()}:{ServerComVars.cameraRot.transform.rotation.eulerAngles.y.ToString()}:{ServerComVars.cameraRot.transform.rotation.eulerAngles.z.ToString()}:{ID}");
                 //Plugin.Logger.LogInfo(Encoding.ASCII.GetString(message));
                 ServerComVars.client_udp.Send(message, message.Length);
             }
+
+            ServerComVars.LastRotEulers = ServerComVars.cameraRot.transform.rotation.eulerAngles;
 
             ErrorMessage.AddDebug(ServerComVars.PopChat());
 
@@ -83,7 +87,8 @@ namespace SubnauticaShadows
                     {
                         //Plugin.Logger.LogInfo(shadow.id);
                         //Plugin.Logger.LogInfo(id);
-                        shadow.targetPosition = ServerComVars.ShadowPositions[id];
+                        shadow.targetPosition = ServerComVars.ShadowPositions[id].Item1;
+                        shadow.targetRotation = ServerComVars.ShadowPositions[id].Item2;
                     }
                 }
             }

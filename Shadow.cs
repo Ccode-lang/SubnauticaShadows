@@ -13,9 +13,12 @@ namespace SubnauticaShadows
 
         public Vector3 targetPosition = Vector3.zero;
 
+        public Quaternion targetRotation = Quaternion.identity;
+
         public void Update()
         {
-            transform.position = Vector3.Slerp(transform.position, targetPosition, Time.deltaTime * 0.9f);
+            transform.position = Vector3.Slerp(transform.position, targetPosition, Time.deltaTime * 4f);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 4f);
         }
     }
 }
